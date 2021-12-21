@@ -50,6 +50,7 @@ public class FT21SenderSR extends FT21AbstractSenderApplication {
 		receivedPackets  = new int[lastPacketSeqN+1];
 		
 		sendNextPacket(now);
+		self.set_timeout(TIMEOUT);
 		return 1;
 	}
 	
