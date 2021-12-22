@@ -22,7 +22,7 @@ public class FT21SenderGBN extends FT21AbstractSenderApplication {
 
 	private File file;
 	private RandomAccessFile raf;
-	private int blockSize, windowSize, packetsSent, packetsInQueue, packetCounter;
+	private int blockSize, windowSize, packetsSent, packetsInQueue, packetCounter, rttValue;
 	private int nextPacketSeqN, lastPacketSeqN;
 	private int[] receivedPackets;
 
@@ -43,6 +43,7 @@ public class FT21SenderGBN extends FT21AbstractSenderApplication {
 		packetCounter = 0;
 		packetsInQueue = 0;
 		nextPacketSeqN = 0;
+		rttValue = 0;
 
 		state = State.BEGINNING;
 		lastPacketSeqN = (int) Math.ceil(file.length() / (double) blockSize);
@@ -62,13 +63,12 @@ public class FT21SenderGBN extends FT21AbstractSenderApplication {
 			self.set_timeout(TIMEOUT);
 			nextPacketSeqN++;
 		}
-		
+		rttValue = (int) System.currentTimeMillis();
 	}
 	
 	public void on_timeout(int now) {
 		super.on_timeout(now);
-		super.tallyRTT(now);
-		super.tallyTimeout(now);
+		super.tallyTimeout(TIMEOUT);
 		
 		packetsInQueue = 0;
 		nextPacketSeqN = packetCounter+1;
@@ -103,8 +103,10 @@ public class FT21SenderGBN extends FT21AbstractSenderApplication {
 					packetsInQueue = packetsInQueue - (ack.cSeqN - packetCounter);
 					packetCounter = ack.cSeqN;
 					for (int i = 1; i <= ack.cSeqN; i++) {
-						if(receivedPackets[i] == 0)
+						if(receivedPackets[i] == 0) {
 							receivedPackets[i] = i;
+							super.tallyRTT((int) System.currentTimeMillis() - rttValue);
+						}
 					}
 			}
 			
